@@ -9,6 +9,8 @@ const keyboardShift = 16;
 const RAD_90 = Math.PI / 2;
 const RAD_180 = Math.PI;
 const RAD_270 = Math.PI * (3 / 2);
+const pointProperties = 'x1 y1 x2 y2 bx by'.split(' ');
+
 
 const getTriangleSizeByThickness = arrowSize => arrowSize;
 
@@ -33,8 +35,43 @@ const canvasEventProxy = (listener, _this) => o => {
     }
 };
 
-fabric.LineAnnotateArrow = fabric.util.createClass(fabric.Object, {
-
+fabric.LineAnnotateArrow = new fabric.util.createClass(fabric.Object, {
+    type: 'LineAnnotateArrow',
+    title: "Annotation",
+    arrowSize: 20,
+    arrow1: true,
+    arrow2: false,
+    strokeWidth: 10,
+    originX: 'center',
+    originY: 'center',
+    hasBorders: true,
+    objectCaching: false,
+    noScaleCache: true,
+    lockSkewingX: true,
+    lockSkewingY: true,
+    lockUniScaling: false,
+    bx: 0,
+    by: 0,
+    controlX: 0,
+    controlY: 0,
+    controlPointAngleFromOrigin:0,
+    distanceOfControlFromOrigin:0,
+    localPassingPoint: new fabric.Point(0,0),
+    length: 0,
+    // padding: 5,
+    perPixelTargetFind: false,
+    // cacheProperties,
+    // stateProperties,
+    scaleX: 1,
+    scaleY: 1,
+    p1: {x: -50, y: 0},
+    p2: {x: 50, y: 0},
+    cp: {
+        x: 0,
+        y: 0
+    },
+    canvas: null,
+    fill: null,
     initialize: function (options) {
         this.canvas = options.canvas
         // if no strokeWidth, rendering issue can occur
@@ -106,4 +143,126 @@ fabric.LineAnnotateArrow = fabric.util.createClass(fabric.Object, {
         this.shiftKeyActive = false;
         this.initialized = true;
     },
+
+    getLocalP1: function () {
+        return new fabric.Point(-this.width / 2, 0);
+    },
+
+    getLocalP2: function () {
+        return new fabric.Point(this.width / 2, 0);
+    },
+    // _set: function (key, value) {
+    //     if (!this.initialized) {
+    //         this.callSuper('_set', key, value);
+    //         return this;
+    //     }
+    //     const newValue = value;
+    //     const previousArrow1 = this.arrow1;
+    //     const previousArrow2 = this.arrow2;
+    //
+    //     if (key === 'thickness') {
+    //         this.strokeWidth = Math.min(this.strokeWidth, newValue * 4);
+    //         this.canvas?.requestRenderAll();
+    //     }
+    //
+    //     if (key === 'fill') {
+    //         this.stroke = newValue;
+    //         this.canvas?.requestRenderAll();
+    //     }
+    //
+    //     if (key === 'strokeWidth') {
+    //         this.strokeWidth = newValue;
+    //         return this;
+    //     }
+    //
+    //     if (key === 'stroke') {
+    //         // this.thickness = Math.max(this.thickness, newValue / 4);
+    //         this.stroke = newValue;
+    //         return this;
+    //     }
+    //     this.callSuper('_set', key, newValue);
+    //
+    //     if (pointProperties.includes(key)) {
+    //         const points = [this.x1, this.y1, this.x2, this.y2];
+    //         const {p1, p2} = this.getPointsFromCoordsArray(points);
+    //         let newP1 = p1;
+    //         let newP2 = p2;
+    //         // Make sure line is not too short
+    //         const minLength = this.getMinLengthFromArrowSize(this.thickness);
+    //         const newLength = p1.distanceFrom(p2);
+    //         if (newLength < minLength) {
+    //             const pointChanged = parseInt(key.substr(1, 1), 10);
+    //             if (pointChanged === 1) {
+    //                 newP1 = extrapolatePoints(p2, p1, minLength / newLength);
+    //                 newP2 = p2;
+    //             } else {
+    //                 newP1 = p1;
+    //                 newP2 = extrapolatePoints(p1, p2, minLength / newLength);
+    //             }
+    //         }
+    //         this.updateWithPoints(newP1, newP2);
+    //     }
+    //
+    //     if (key === 'length') {
+    //         // Flip line if length is negative
+    //         let points = [this.x1, this.y1, this.x2, this.y2];
+    //         if (newValue < 0) {
+    //             points = [this.x2, this.y2, this.x1, this.y1];
+    //         }
+    //         const {p1, p2} = this.getPointsFromCoordsArray(points);
+    //         const newLength = Math.abs(newValue);
+    //         const minLength = this.getMinLengthFromArrowSize(this.strokeWidth);
+    //         const currentLength = p1.distanceFrom(p2);
+    //         // Make sure line is not too short
+    //         const newP2 = extrapolatePoints(
+    //             p1,
+    //             p2,
+    //             Math.max(newLength, minLength) / currentLength,
+    //         );
+    //         this.updateWithPoints(p1, newP2);
+    //     }
+    //
+    //     if (key === 'top' || key === 'left') {
+    //         this.updateP1Coords(this.getGlobalPoint(this.getLocalP1()));
+    //         this.updateP2Coords(this.getGlobalPoint(this.getLocalP2()));
+    //     }
+    //
+    //     if (key === 'arrow1' && !previousArrow1 && newValue === true) {
+    //         const points = [this.x1, this.y1, this.x2, this.y2];
+    //         const {p1, p2} = this.getPointsFromCoordsArray(points);
+    //         const minLength = this.getMinLengthFromArrowSize(this.strokeWidth);
+    //         const currentLength = p1.distanceFrom(p2);
+    //
+    //         // Make sure line is not too short
+    //         if (currentLength < minLength) {
+    //             const newP1 = extrapolatePoints(p2, p1, minLength / currentLength);
+    //             this.updateWithPoints(newP1, p2);
+    //         }
+    //     }
+    //
+    //     if (key === 'arrow2' && !previousArrow2 && newValue === true) {
+    //         const points = [this.x1, this.y1, this.x2, this.y2];
+    //         const {p1, p2} = this.getPointsFromCoordsArray(points);
+    //         const minLength = this.getMinLengthFromArrowSize(this.strokeWidth);
+    //         const currentLength = p1.distanceFrom(p2);
+    //
+    //         // Make sure line is not too short
+    //         if (currentLength < minLength) {
+    //             const newP2 = extrapolatePoints(p1, p2, minLength / currentLength);
+    //             this.updateWithPoints(p1, newP2);
+    //         }
+    //     }
+    //
+    //     // if (key === 'canvas') {
+    //     //     if (newValue) {
+    //     //         // Canvas is set, we can use it
+    //     //         this.addCanvasListeners();
+    //     //     } else {
+    //     //         this.removeCanvasListeners();
+    //     //     }
+    //     // }
+    //
+    //     return this;
+    // }
+
 });
