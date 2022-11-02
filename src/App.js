@@ -6,13 +6,51 @@ import './App.css';
 
  function App() {
      const [canvas,setCanvas] = useState(null)
+
      useEffect(() => {
-         setCanvas(new fabric.Canvas('canvas'));
+          setCanvas(new fabric.Canvas('canvas',{
+             width: 500,
+             height:500,
+              __keyboardEvents:[{
+                  name: 'keydown',
+                  handler: keyDownHandler
+              }]
+         }));
      },[])
-     const drawCanvas=function(){
+     useEffect(() => {
+         if(!canvas) return
+         settingImage(canvas)
+         document.addEventListener('keydown',keyDownHandler)
+
+     },[canvas])
+    const settingImage = (canvas)=>{
+        fabric.Image.fromURL('https://cdn.pixabay.com/photo/2017/03/17/19/37/sky-2152463_960_720.jpg',(img)=>{
+           canvas.backgroundImage = img
+            
+            canvas.requestRenderAll()
+        })
+
+    }
+    const keyDownHandler = (event)=>{
+        const {
+            target,
+            code,
+            repeat
+        } = event;
+        if (code === 'Delete' || code === 'Backspace') {
+            const active = canvas.getActiveObjects();
+            if (!active) return;
+            if(active == canvas.backgroundImage) return;
+            active.map((obj)=>canvas.remove(obj))
+            canvas.requestRenderAll()
+        }
+    }
+     const drawRectangle=function(){
         var rect= new fabric.Rect({
-            top : 100,
-            left : 100,
+            top : canvas.height/2,
+            left : canvas.width/2,
+            originX:'center',
+            originY:'center',
             width:60,
             height:100,
             fill:'red'
@@ -93,7 +131,7 @@ import './App.css';
                   <canvas id="canvas" className={"border 3px solid visible"} width={600} height={900} ></canvas>
               </div>
               <div className={"col-md-4 d-flex align-items-center justify-content-center"}>
-                  <button className={"btn-primary"} onClick={drawCanvas}>Draw Rectangle</button>
+                  <button className={"btn-primary"} onClick={drawRectangle}>Draw Rectangle</button>
                   <button className={"ml-5 btn-primary"} onClick={()=> addAnnotationToCanvas(canvas,'arrow')}>Draw Arrow</button>
               </div>
           </div>
